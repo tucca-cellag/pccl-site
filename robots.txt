@@ -1,0 +1,7 @@
+# PCCL: shareable link, but kept out of search results.
+# Crawling is allowed on purpose: a crawler that is blocked by robots.txt never
+# fetches the page, so it never sees the noindex robots tag and can still list
+# the bare URL. noindex is what keeps pages out of results. GitHub Pages sends
+# no X-Robots-Tag header, so files that are not pages carry no noindex.
+User-agent: *
+Allow: /
