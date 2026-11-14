@@ -2057,42 +2057,6 @@ a.act:focus-visible {
   align-items: center;
   margin-bottom: 1.1rem;
 }
-.size-toggle {
-  display: inline-flex;
-  border: 1px solid var(--line-strong);
-  border-radius: 10px;
-  overflow: hidden;
-  background: var(--paper-raised);
-  box-shadow: var(--shadow);
-}
-.size-btn {
-  font-family: var(--sans);
-  font-weight: 600;
-  font-size: 0.84rem;
-  padding: 0.58rem 1.05rem;
-  border: 0;
-  background: transparent;
-  color: var(--ink-soft);
-  cursor: pointer;
-  transition:
-    background 0.15s ease,
-    color 0.15s ease;
-}
-.size-btn + .size-btn {
-  border-left: 1px solid var(--line);
-}
-.size-btn:hover:not(.on) {
-  background: var(--paper-sunk);
-  color: var(--ink);
-}
-.size-btn:focus-visible {
-  outline: 2px solid var(--blue);
-  outline-offset: -2px;
-}
-.size-btn.on {
-  background: var(--brown);
-  color: var(--on-accent);
-}
 .map-search {
   position: relative;
   flex: 1 1 220px;

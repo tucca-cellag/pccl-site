@@ -59,7 +59,8 @@
   function showSpecies(m) {
     var d = DETAIL[m.s];
     var html = '<p class="d-rank">Species</p><h3 class="d-name sp">' + (d && d.id ? '<a href="species/' + esc(d.id) + '.html">' + esc(m.s) + "</a>" : esc(m.s)) + "</h3>";
-    if (d && d.common) html += '<p class="d-common">' + esc(d.common) + "</p>";
+    if (d && d.common)
+      html += '<p class="d-common">' + esc(d.common.split(",").join(", ")) + "</p>";
     if (d) {
       var parts = [d.order, d.family, d.genus || m.s.split(" ")[0]].filter(Boolean);
       if (parts.length) html += '<p class="d-path">' + parts.map(esc).join(" \u203A ") + "</p>";

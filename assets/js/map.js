@@ -32,14 +32,10 @@
     return node;
   }
   var root = build(JSON.parse(JSON.stringify(DATA)), 0, null);
-  var metric = "species";
-  function setValues() {
-    (function rec(n) {
-      n.value = metric === "lines" ? n.nlines : n.nspecies;
-      if (n.children) n.children.forEach(rec);
-    })(root);
-  }
-  setValues();
+  (function rec(n) {
+    n.value = n.nspecies;
+    if (n.children) n.children.forEach(rec);
+  })(root);
   var orders = root.children.map(function(o) {
     return o.name;
   });
@@ -78,14 +74,11 @@
     tip.style.opacity = 0;
   }
   function unit() {
-    return metric === "lines" ? "cell line" : "species";
-  }
-  function unitsOf(v) {
-    return unit() + (v === 1 || metric !== "lines" ? "" : "s");
+    return "species";
   }
   function tipHTML(d) {
     var rank = RANKS[d.depth] || "taxon";
-    var v = d.value, u = unitsOf(v);
+    var v = d.value, u = unit();
     var nm = d.depth === 4 ? "<em>" + esc(d.name) + "</em>" : esc(d.name);
     return '<div class="t-r">' + rank + '</div><div class="t-name">' + nm + '</div><div class="t-n">' + v + " " + u + "</div>";
   }
@@ -434,20 +427,13 @@
     return r;
   }
   function dotsOf(family) {
-    var out = [];
-    speciesLeaves(family).forEach(function(sp) {
-      if (metric === "lines") {
-        var d = DETAIL[sp.name];
-        (d && d.lines ? d.lines : []).forEach(function(l) {
-          out.push({ r: 1, sp, cid: l.cid });
-        });
-      } else out.push({ r: 1, sp, cid: null });
+    return speciesLeaves(family).map(function(sp) {
+      return { r: 1, sp };
     });
-    return out;
   }
-  var packed = {};
+  var packed = null;
   function packTree() {
-    if (packed[metric]) return packed[metric];
+    if (packed) return packed;
     seed = 1;
     var tree = [];
     root.children.forEach(function(o) {
@@ -466,8 +452,8 @@
     tree.sort(function(a, b) {
       return b.r - a.r;
     });
-    packed[metric] = { orders: tree, r: packWithGap(tree, 2.5) };
-    return packed[metric];
+    packed = { orders: tree, r: packWithGap(tree, 2.5) };
+    return packed;
   }
   function paper() {
     return getComputedStyle(document.documentElement).getPropertyValue("--paper-raised").trim();
@@ -493,7 +479,7 @@
     return t;
   }
   function familyTipHTML(f, o) {
-    return '<div class="t-r">family \xB7 ' + esc(o.node.name) + '</div><div class="t-name">' + esc(f.node.name) + '</div><div class="t-n">' + f.node.value + " " + unitsOf(f.node.value) + "</div>";
+    return '<div class="t-r">family \xB7 ' + esc(o.node.name) + '</div><div class="t-name">' + esc(f.node.name) + '</div><div class="t-n">' + f.node.value + " " + unit() + "</div>";
   }
   function placeNames(items, size, box, placed) {
     var pad = size * 0.15;
@@ -663,7 +649,7 @@
             c.addEventListener("mousemove", function(e) {
               e.stopPropagation();
               tipAt(
-                '<div class="t-r">' + (dot.cid ? "cell line " + esc(dot.cid) : "species") + '</div><div class="t-name"><em>' + esc(dot.sp.name) + '</em></div><div class="t-n">' + esc(f.node.name) + " \xB7 " + esc(o.node.name) + "</div>",
+                '<div class="t-r">species</div><div class="t-name"><em>' + esc(dot.sp.name) + '</em></div><div class="t-n">' + esc(f.node.name) + " \xB7 " + esc(o.node.name) + "</div>",
                 e
               );
             });
@@ -742,7 +728,7 @@
     if (!node.children) {
       var d = DETAIL[node.name] || {};
       html += '<p class="d-rank">Species</p><h2 class="d-name sp">' + (d.id ? '<a href="species/' + esc(d.id) + '.html">' + esc(node.name) + "</a>" : esc(node.name)) + "</h2>";
-      if (d.common) html += '<p class="d-common">' + esc(d.common) + "</p>";
+      if (d.common) html += '<p class="d-common">' + esc(d.common.split(",").join(", ")) + "</p>";
       var genus = d.genus || node.name.split(" ")[0];
       var parts = [d.order, d.family, genus].filter(Boolean);
       html += parts.length ? '<p class="d-path">' + parts.map(esc).join(" \u203A ") + "</p>" : '<p class="d-path">Taxonomy not yet recorded</p>';
@@ -870,7 +856,7 @@
     window.pcclHTML(
       legendEl,
       root.children.map(function(o, i) {
-        return '<button type="button" data-i="' + i + '"><i style="background:hsl(' + hueOf[o.name] + "," + (dk ? 45 : 52) + "%," + (dk ? 52 : 50) + '%)"></i>' + esc(o.name) + ' <b class="muted">' + o.value + '</b><span class="sr-only"> ' + unitsOf(o.value) + "</span></button>";
+        return '<button type="button" data-i="' + i + '"><i style="background:hsl(' + hueOf[o.name] + "," + (dk ? 45 : 52) + "%," + (dk ? 52 : 50) + '%)"></i>' + esc(o.name) + ' <b class="muted">' + o.value + '</b><span class="sr-only"> ' + unit() + "</span></button>";
       }).join("")
     );
     Array.prototype.forEach.call(legendEl.querySelectorAll("button"), function(b) {
@@ -907,19 +893,6 @@
   Array.prototype.forEach.call(document.querySelectorAll(".view-btn"), function(b) {
     b.addEventListener("click", function() {
       setView(b.getAttribute("data-view"));
-    });
-  });
-  Array.prototype.forEach.call(document.querySelectorAll(".size-btn"), function(b) {
-    b.addEventListener("click", function() {
-      metric = b.getAttribute("data-size");
-      setValues();
-      Array.prototype.forEach.call(document.querySelectorAll(".size-btn"), function(x) {
-        var on = x === b;
-        x.classList.toggle("on", on);
-        x.setAttribute("aria-pressed", on ? "true" : "false");
-      });
-      if (focus.value <= 0) focus = root;
-      render();
     });
   });
   var mo = new MutationObserver(render);
