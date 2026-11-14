@@ -1,0 +1,26 @@
+# Tufts Plant Cell Culture Library (PCCL)
+
+> A collection of characterized plant cell lines at the Tufts University Center for Cellular Agriculture: 1544 species, 1605 held lines and 36 media recipes. Each line, species and medium has a page of its own on this site.
+
+A line's page is at https://pccl.tufts.edu/line/<Culture ID>, with any space in the Culture ID written as a hyphen; a medium's is at https://pccl.tufts.edu/medium/<media code>. Lines are requested by Culture ID, as the Ordering page describes. No licence has been chosen for this data yet. The terms for reusing it are still being settled. For questions about reuse, write to cellag@tufts.edu.
+
+## Pages
+
+- [Catalog](https://pccl.tufts.edu/catalog): every species and held line, searchable by name, family, growth and bioactivity
+- [Taxonomy](https://pccl.tufts.edu/taxonomy): the collection by plant order, family and genus
+- [Bioactivity](https://pccl.tufts.edu/bioactivity): biological activities reported for the species behind the collection
+- [Media](https://pccl.tufts.edu/media): the tissue-culture media the lines are grown in, each with its per-liter composition
+- [Ordering](https://pccl.tufts.edu/order): how to request a line by Culture ID
+- [What changed](https://pccl.tufts.edu/changelog): the changes to the collection's data, release by release
+- [About](https://pccl.tufts.edu/about): the collection's mission and history, how to cite it, how to support it, who to contact, and who made this site
+
+## Data
+
+- [Data download](https://pccl.tufts.edu/downloads/pccl-data.zip): one zip of the species, held lines and media recipes as CSV and JSON, with a README describing every column. Data date: 2026-11-12.
+- [Downloads](https://pccl.tufts.edu/downloads): what the download holds
+- [Sitemap](https://pccl.tufts.edu/sitemap.xml): the address of every line, species and medium page
+
+## Optional
+
+- [Accessibility](https://pccl.tufts.edu/accessibility): the site's accessibility statement
+- [Privacy](https://pccl.tufts.edu/privacy): how the site handles privacy

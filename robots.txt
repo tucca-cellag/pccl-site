@@ -1,7 +1,8 @@
-# PCCL: shareable link, but kept out of search results.
-# Crawling is allowed on purpose: a crawler that is blocked by robots.txt never
-# fetches the page, so it never sees the noindex robots tag and can still list
-# the bare URL. noindex is what keeps pages out of results. GitHub Pages sends
-# no X-Robots-Tag header, so files that are not pages carry no noindex.
+# PCCL: every page may be crawled and shown in search results, and the sitemap lists each one with
+# content of its own. A page that should stay out of results (a line or species no longer in the
+# collection, the 404 page, a redirect from a former address) carries a noindex robots tag rather
+# than a Disallow line here: a crawler blocked by robots.txt never fetches the page, so it never
+# sees the tag and can still list the bare address.
 User-agent: *
 Allow: /
+Sitemap: https://pccl.tufts.edu/sitemap.xml
