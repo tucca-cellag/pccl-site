@@ -1,6 +1,6 @@
-# Tufts Plant Cell Culture Library (PCCL)
+# Tufts University Plant Cell Culture Library (PCCL)
 
-> A collection of characterized plant cell lines at the Tufts University Center for Cellular Agriculture: 1544 species, 1605 held lines and 36 media recipes. Each line, species and medium has a page of its own on this site.
+> A collection of characterized plant cell lines hosted at the Tufts University Innovation Hub for Food and Materials, in collaboration with the Tufts University Center for Cellular Agriculture: 1544 species, 1605 held lines and 36 media recipes. Each line, species and medium has a page of its own on this site.
 
 A line's page is at https://pccl.tufts.edu/line/<Culture ID>, with any space in the Culture ID written as a hyphen; a medium's is at https://pccl.tufts.edu/medium/<media code>. Lines are requested by Culture ID, as the Ordering page describes. No licence has been chosen for this data yet. The terms for reusing it are still being settled. For questions about reuse, write to cellag@tufts.edu.
 

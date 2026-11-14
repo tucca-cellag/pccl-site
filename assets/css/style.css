@@ -369,9 +369,14 @@ h3 {
   .utilbar-cta {
     display: none;
   }
+  
+  .utilbar-inner {
+    padding-block: 0.4rem;
+  }
   .utilbar-org {
     font-size: 0.64rem;
     letter-spacing: 0.05em;
+    line-height: 1.4;
   }
 }
 
@@ -925,7 +930,9 @@ nav.links a.active {
   color: var(--ink-soft);
   max-width: 42ch;
 }
-.hosted a {
+
+.hosted a,
+.hero .lede a {
   color: var(--green-deep);
   font-weight: 600;
   text-decoration: underline;
