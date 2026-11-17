@@ -154,8 +154,7 @@
       p.setAttribute("role", "button");
       p.setAttribute("aria-label", d.name + ", " + d.value + " " + unit());
       var act = function() {
-        selected = d;
-        openDetail(d);
+        choose(d, true);
         if (d.children) {
           focus = d;
         }
@@ -192,8 +191,7 @@
     hub.addEventListener("click", function() {
       if (focus.parent) {
         focus = focus.parent;
-        selected = focus;
-        openDetail(focus);
+        choose(focus, true);
         drawSun();
         updateCrumb();
       }
@@ -235,8 +233,7 @@
     Array.prototype.forEach.call(crumb.querySelectorAll(".cx"), function(b) {
       b.addEventListener("click", function() {
         focus = chain[+b.getAttribute("data-i")];
-        selected = focus;
-        openDetail(focus);
+        choose(focus, true);
         drawSun();
         updateCrumb();
       });
@@ -527,8 +524,7 @@
   var zoomed = null, zoomedGroup = null, drawnWidth = 0;
   function zoomIn(node, fromKeyboard) {
     zoomed = node;
-    selected = node;
-    openDetail(node);
+    choose(node, true);
     hideTip();
     drawBubbles();
     if (fromKeyboard && zoomedGroup) {
@@ -655,16 +651,14 @@
             });
             c.addEventListener("click", function(e) {
               e.stopPropagation();
-              selected = dot.sp;
-              openDetail(dot.sp);
+              choose(dot.sp, true);
             });
             g.appendChild(c);
           });
           g.style.cursor = "pointer";
           asButton(blob, f.node);
           var openFamily = function() {
-            selected = f.node;
-            openDetail(f.node);
+            choose(f.node, true);
           };
           g.addEventListener("click", openFamily);
           onActivate(blob, openFamily);
@@ -755,21 +749,20 @@
       });
       html += '<p class="d-sub">' + (node.depth >= 3 ? "Species" : RANKS[node.depth + 1] + "s") + '</p><div class="d-chips">';
       html += kids.map(function(c) {
-        return '<button class="d-chip" data-name="' + esc(c.name) + '">' + (c.children ? "" : "<em>") + esc(c.name) + (c.children ? "" : "</em>") + " <b>" + c.nspecies + "</b></button>";
+        return '<button class="d-chip" data-name="' + esc(c.name) + '" data-depth="' + c.depth + '">' + (c.children ? "" : "<em>") + esc(c.name) + (c.children ? "" : "</em>") + " <b>" + c.nspecies + "</b></button>";
       }).join("") + "</div>";
     }
     window.pcclHTML(detailEl, html);
     detailEl.classList.add("open");
     Array.prototype.forEach.call(detailEl.querySelectorAll(".d-chip"), function(b) {
       b.addEventListener("click", function() {
-        var t = findNode(b.getAttribute("data-name"));
+        var t = nodeOf(b);
         if (t) showInView(t);
       });
     });
   }
   function showInView(t) {
-    selected = t;
-    openDetail(t);
+    choose(t, true);
     if (t.children) focus = t;
     if (view === "bubble") {
       zoomed = orderAncestor(t);
@@ -781,11 +774,24 @@
   }
   var byName = {};
   (function idx(n) {
-    byName[n.name.toLowerCase()] = n;
+    var k = n.name.toLowerCase();
+    (byName[k] = byName[k] || []).push(n);
     if (n.children) n.children.forEach(idx);
   })(root);
-  function findNode(nm) {
-    return byName[(nm || "").toLowerCase()];
+  Object.keys(byName).forEach(function(k) {
+    byName[k].sort(function(a, b) {
+      return a.depth - b.depth;
+    });
+  });
+  function findNode(nm, depth) {
+    var list = byName[(nm || "").toLowerCase()] || [];
+    if (depth === void 0) return list[0];
+    return list.filter(function(n) {
+      return n.depth === depth;
+    })[0];
+  }
+  function nodeOf(b) {
+    return findNode(b.getAttribute("data-name"), Number(b.getAttribute("data-depth")));
   }
   var allNodes = [];
   (function c(n) {
@@ -813,20 +819,19 @@
     window.pcclHTML(
       suggestEl,
       hits.map(function(n) {
-        return '<button class="sg" data-name="' + esc(n.name) + '"><span class="sg-r">' + RANKS[n.depth] + "</span> " + (n.depth === 4 ? "<em>" + esc(n.name) + "</em>" : esc(n.name)) + " <b>" + n.nspecies + "</b></button>";
+        return '<button class="sg" data-name="' + esc(n.name) + '" data-depth="' + n.depth + '"><span class="sg-r">' + RANKS[n.depth] + "</span> " + (n.depth === 4 ? "<em>" + esc(n.name) + "</em>" : esc(n.name)) + " <b>" + n.nspecies + "</b></button>";
       }).join("")
     );
     suggestEl.classList.add("open");
     Array.prototype.forEach.call(suggestEl.querySelectorAll(".sg"), function(b) {
       b.addEventListener("click", function() {
-        jumpTo(findNode(b.getAttribute("data-name")));
+        jumpTo(nodeOf(b), true);
       });
     });
   }
-  function jumpTo(n) {
+  function jumpTo(n, step) {
     if (!n) return;
-    selected = n;
-    openDetail(n);
+    choose(n, step);
     focus = n.children ? n : n.parent || root;
     setView("sun");
     suggestEl.classList.remove("open");
@@ -839,7 +844,7 @@
     searchEl.addEventListener("keydown", function(e) {
       if (e.key === "Enter") {
         var first = suggestEl.querySelector(".sg");
-        if (first) jumpTo(findNode(first.getAttribute("data-name")));
+        if (first) jumpTo(nodeOf(first), true);
       }
       if (e.key === "Escape") {
         suggestEl.classList.remove("open");
@@ -899,21 +904,46 @@
   mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", render);
   render();
-  function fromHash() {
-    var h = (location.hash || "").replace(/^#/, "");
-    if (!h) return;
-    try {
-      h = decodeURIComponent(h);
-    } catch {
-      return;
+  var drawnFor = null;
+  function writeAddress(node, step) {
+    var hash = "";
+    if (node.depth > 0) {
+      hash = "#taxon=" + encodeURIComponent(node.name);
+      if (findNode(node.name) !== node) hash += "&rank=" + RANKS[node.depth];
     }
-    h = h.replace(/^taxon=/, "");
-    var n = findNode(h);
-    if (n) {
-      jumpTo(n);
-      svg.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (hash !== location.hash) {
+      var url = location.pathname + location.search + hash;
+      if (step) history.pushState(null, "", url);
+      else history.replaceState(history.state, "", url);
     }
+    drawnFor = location.hash;
   }
-  fromHash();
-  window.addEventListener("hashchange", fromHash);
+  function choose(node, step) {
+    selected = node;
+    openDetail(node);
+    writeAddress(node, step);
+  }
+  function fromAddress() {
+    var params = new URLSearchParams(location.hash.slice(1));
+    var rank = params.get("rank");
+    return findNode(params.get("taxon"), rank ? RANKS.indexOf(rank) : void 0) || null;
+  }
+  function followAddress() {
+    if (location.hash === drawnFor) return;
+    var n = fromAddress() || root;
+    choose(n, false);
+    focus = n.children ? n : n.parent || root;
+    if (view === "bubble") zoomed = n.depth > 0 ? orderAncestor(n) : null;
+    render();
+  }
+  var linked = fromAddress();
+  if (linked) {
+    jumpTo(linked, false);
+    svg.scrollIntoView({ behavior: "smooth", block: "center" });
+  } else {
+    if (location.hash) history.replaceState(history.state, "", location.pathname + location.search);
+    drawnFor = location.hash;
+  }
+  window.addEventListener("popstate", followAddress);
+  window.addEventListener("hashchange", followAddress);
 })();

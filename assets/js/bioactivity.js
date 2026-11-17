@@ -5,6 +5,9 @@
   var panel = document.getElementById("mapdetail");
   var tip = document.getElementById("maptip");
   if (!DATA || !panel) return;
+  var hint = Array.prototype.map.call(panel.childNodes, function(n) {
+    return n.cloneNode(true);
+  });
   var tally = /* @__PURE__ */ Object.create(null);
   DATA.forEach(function(d) {
     d.f.forEach(function(a) {
@@ -91,7 +94,7 @@
     panel.classList.add("open");
     Array.prototype.forEach.call(panel.querySelectorAll(".d-chip"), function(b) {
       b.addEventListener("click", function() {
-        showSpecies(byName[b.getAttribute("data-sp")]);
+        openSpecies(byName[b.getAttribute("data-sp")], true);
       });
     });
   }
@@ -131,6 +134,7 @@
   }
   var combos = document.getElementById("combos");
   var heads = /* @__PURE__ */ Object.create(null);
+  var rows = [];
   if (combos) {
     var groups = /* @__PURE__ */ Object.create(null);
     DATA.forEach(function(d) {
@@ -139,7 +143,7 @@
       }).join("\0");
       (groups[key2] = groups[key2] || []).push(d);
     });
-    var rows = Object.keys(groups).map(function(key2) {
+    rows = Object.keys(groups).map(function(key2) {
       return { acts: key2.split("\0"), members: groups[key2] };
     }).sort(function(a, b) {
       return b.members.length - a.members.length || a.acts.length - b.acts.length;
@@ -166,8 +170,7 @@
       b.appendChild(ct);
       b.appendChild(sr);
       b.addEventListener("click", function() {
-        select(b);
-        showGroup("Activity", a, membersOf(a));
+        openActivity(a, true);
         bringPanel();
       });
       heads[a] = b;
@@ -223,13 +226,9 @@
       bc.appendChild(num);
       b.appendChild(bc);
       hover(b, plural(n, "species", "species"), "exactly " + label);
+      r.el = b;
       b.addEventListener("click", function() {
-        select(b);
-        showGroup(
-          r.acts.length > 1 ? "Exactly these activities" : "Only this activity",
-          label,
-          r.members
-        );
+        openRow(r, true);
         bringPanel();
       });
       combos.appendChild(b);
@@ -288,8 +287,7 @@
         b.className = "sp";
         b.textContent = d.s;
         b.addEventListener("click", function() {
-          select(row);
-          showSpecies(d);
+          openSpecies(d, true);
           bringPanel();
         });
         td.appendChild(b);
@@ -346,25 +344,108 @@
       });
     drawTable();
   }
-  function fromHash() {
-    var h = (location.hash || "").replace(/^#/, "");
-    if (!h) return;
-    try {
-      h = decodeURIComponent(h);
-    } catch {
-      return;
+  var drawnFor = null;
+  function writeAddress(hash, step) {
+    if (hash !== location.hash) {
+      var url = location.pathname + location.search + hash;
+      if (step) history.pushState(null, "", url);
+      else history.replaceState(history.state, "", url);
     }
-    h = h.replace(/^act=/, "");
-    var a = ACTS.filter(function(x) {
-      return x.toLowerCase() === h.toLowerCase();
-    })[0];
-    if (!a) return;
+    drawnFor = location.hash;
+  }
+  function openActivity(a, step) {
     select(heads[a]);
     showGroup("Activity", a, membersOf(a));
+    writeAddress("#act=" + encodeURIComponent(a), step);
+  }
+  function openRow(r, step) {
+    select(r.el);
+    showGroup(
+      r.acts.length > 1 ? "Exactly these activities" : "Only this activity",
+      r.acts.join(" + "),
+      r.members
+    );
+    writeAddress("#exactly=" + r.acts.map(encodeURIComponent).join(","), step);
+  }
+  function openSpecies(m, step) {
+    var b = [].filter.call(document.querySelectorAll("#biotable button.sp"), function(x) {
+      return x.textContent === m.s;
+    })[0];
+    select(b ? b.closest("tr") : null);
+    showSpecies(m);
+    writeAddress("#species=" + encodeURIComponent(m.s), step);
+  }
+  function openNothing() {
+    select(null);
+    panel.textContent = "";
+    hint.forEach(function(n) {
+      panel.appendChild(n.cloneNode(true));
+    });
+    panel.classList.remove("open");
+    writeAddress("", false);
+  }
+  function rawPart(key2) {
+    var found = null;
+    location.hash.slice(1).split("&").forEach(function(kv) {
+      if (kv.slice(0, key2.length + 1) === key2 + "=") found = kv.slice(key2.length + 1);
+    });
+    return found;
+  }
+  function lowerDecoded(raw) {
+    try {
+      return decodeURIComponent(raw.replace(/\+/g, " ")).toLowerCase();
+    } catch {
+      return "";
+    }
+  }
+  function fromAddress() {
+    var raw = rawPart("act");
+    if (raw !== null) {
+      var a = ACTS.filter(function(x) {
+        return x.toLowerCase() === lowerDecoded(raw);
+      })[0];
+      return a ? function() {
+        openActivity(a, false);
+      } : null;
+    }
+    raw = rawPart("exactly");
+    if (raw !== null) {
+      var want = raw.split(",").map(lowerDecoded);
+      var r = rows.filter(function(x) {
+        return x.acts.length === want.length && x.acts.every(function(y) {
+          return want.indexOf(y.toLowerCase()) >= 0;
+        });
+      })[0];
+      return r ? function() {
+        openRow(r, false);
+      } : null;
+    }
+    raw = rawPart("species");
+    if (raw !== null) {
+      var m = DATA.filter(function(d) {
+        return d.s.toLowerCase() === lowerDecoded(raw);
+      })[0];
+      return m ? function() {
+        openSpecies(m, false);
+      } : null;
+    }
+    return null;
+  }
+  function followAddress() {
+    if (location.hash === drawnFor) return;
+    var open = fromAddress();
+    if (open) open();
+    else openNothing();
+  }
+  var linked = fromAddress();
+  if (linked) {
+    linked();
     if (stacked.matches) bringPanel();
     else if (combos)
       combos.scrollIntoView({ behavior: still.matches ? "auto" : "smooth", block: "start" });
+  } else {
+    writeAddress("", false);
   }
-  fromHash();
-  window.addEventListener("hashchange", fromHash);
+  window.addEventListener("popstate", followAddress);
+  window.addEventListener("hashchange", followAddress);
 })();
