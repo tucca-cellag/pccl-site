@@ -6,6 +6,7 @@
   var countEl = document.getElementById("catCount");
   var qEl = document.getElementById("catQ");
   var famSel = document.getElementById("catFamily");
+  var genSel = document.getElementById("catGenus");
   var actSel = document.getElementById("catActivity");
   var sortSel = document.getElementById("catSort");
   var growthNote = document.getElementById("catGrowthNote");
@@ -46,6 +47,7 @@
     growth: false,
     bio: false,
     fam: "",
+    genus: "",
     act: "",
     sort: "common"
   };
@@ -122,6 +124,7 @@
     if (state.growth && !(d.maxGrowth >= 4)) return false;
     if (state.bio && !d.hasAct) return false;
     if (state.fam && d.family !== state.fam) return false;
+    if (state.genus && d.genus !== state.genus) return false;
     if (state.act && !(d.acts && d.acts.indexOf(state.act) !== -1)) return false;
     return true;
   }
@@ -167,8 +170,11 @@
     var params = new URLSearchParams(location.hash.slice(1));
     state.q = params.get("q") || "";
     if (qEl) qEl.value = state.q;
-    state.fam = setMenu(famSel, params.get("family") || "");
-    if (famSel) famSel.classList.toggle("on", !!state.fam);
+    var genus = params.get("genus") || "";
+    var fam = params.get("family") || "";
+    if (genus && familyOf[genus] && !generaOf[fam]) fam = familyOf[genus];
+    setFamily(fam);
+    setGenus(genus);
     state.act = setMenu(actSel, params.get("act") || "");
     if (actSel) actSel.classList.toggle("on", !!state.act);
     state.bio = params.get("bio") === "1";
@@ -181,6 +187,7 @@
     var parts = [];
     if (state.q.trim()) parts.push("q=" + encodeURIComponent(state.q));
     if (state.fam) parts.push("family=" + encodeURIComponent(state.fam));
+    if (state.genus) parts.push("genus=" + encodeURIComponent(state.genus));
     if (state.act) parts.push("act=" + encodeURIComponent(state.act));
     if (state.bio) parts.push("bio=1");
     if (state.growth) parts.push("growth=4-5");
@@ -269,17 +276,14 @@
   }
   if (dlBtn) dlBtn.addEventListener("click", downloadResults);
   function filtered() {
-    return !!(state.q.trim() || state.growth || state.bio || state.fam || state.act);
+    return !!(state.q.trim() || state.growth || state.bio || state.fam || state.genus || state.act);
   }
   function clearFilters() {
     state.q = "";
     if (qEl) qEl.value = "";
     state.growth = state.bio = false;
-    state.fam = state.act = "";
-    if (famSel) {
-      famSel.value = "";
-      famSel.classList.remove("on");
-    }
+    state.act = "";
+    setFamily("");
     if (actSel) {
       actSel.value = "";
       actSel.classList.remove("on");
@@ -314,27 +318,52 @@
     if (growthNote)
       growthNote.textContent = "Growth, 1 slow to 5 fast, is rated for " + fmt(rated) + " of " + fmt(lines) + " held lines.";
   }
+  function fillMenu(el, counts, byCount) {
+    if (!el) return;
+    Object.keys(counts).sort(function(a, b) {
+      return byCount ? counts[b] - counts[a] || a.localeCompare(b) : a.localeCompare(b);
+    }).forEach(function(k) {
+      var o = document.createElement("option");
+      o.value = k;
+      o.textContent = k + " (" + counts[k] + ")";
+      el.appendChild(o);
+    });
+  }
+  var generaOf = /* @__PURE__ */ Object.create(null);
+  var familyOf = /* @__PURE__ */ Object.create(null);
   function populateFilters() {
     var famCounts = {}, actCounts = {};
     DATA.forEach(function(d) {
       if (d.family) famCounts[d.family] = (famCounts[d.family] || 0) + 1;
+      if (d.family && d.genus) {
+        var g = generaOf[d.family] = generaOf[d.family] || /* @__PURE__ */ Object.create(null);
+        g[d.genus] = (g[d.genus] || 0) + 1;
+        familyOf[d.genus] = d.family;
+      }
       (d.acts || []).forEach(function(a) {
         actCounts[a] = (actCounts[a] || 0) + 1;
       });
     });
-    function fill(el, counts, byCount) {
-      if (!el) return;
-      Object.keys(counts).sort(function(a, b) {
-        return byCount ? counts[b] - counts[a] || a.localeCompare(b) : a.localeCompare(b);
-      }).forEach(function(k) {
-        var o = document.createElement("option");
-        o.value = k;
-        o.textContent = k + " (" + counts[k] + ")";
-        el.appendChild(o);
-      });
-    }
-    fill(famSel, famCounts, false);
-    fill(actSel, actCounts, true);
+    fillMenu(famSel, famCounts, false);
+    fillMenu(actSel, actCounts, true);
+  }
+  function setFamily(fam) {
+    state.fam = setMenu(famSel, fam);
+    if (famSel) famSel.classList.toggle("on", !!state.fam);
+    state.genus = "";
+    if (!genSel) return;
+    genSel.textContent = "";
+    var all = document.createElement("option");
+    all.value = "";
+    all.textContent = state.fam ? "All genera" : "Pick a family first";
+    genSel.appendChild(all);
+    fillMenu(genSel, state.fam && generaOf[state.fam] || {}, false);
+    genSel.disabled = !state.fam;
+    genSel.classList.remove("on");
+  }
+  function setGenus(genus) {
+    state.genus = setMenu(genSel, genus);
+    if (genSel) genSel.classList.toggle("on", !!state.genus);
   }
   var chips = document.querySelectorAll(".cat-chip");
   for (var j = 0; j < chips.length; j++) {
@@ -355,8 +384,12 @@
     });
   if (famSel)
     famSel.addEventListener("change", function() {
-      state.fam = this.value;
-      this.classList.toggle("on", !!this.value);
+      setFamily(this.value);
+      render(true);
+    });
+  if (genSel)
+    genSel.addEventListener("change", function() {
+      setGenus(this.value);
       render(true);
     });
   if (sortSel)

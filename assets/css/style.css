@@ -2549,6 +2549,16 @@ footer {
   font-weight: 600;
 }
 
+.cat-select:disabled {
+  cursor: default;
+  color: var(--ink-faint);
+  background-color: transparent;
+}
+.cat-select:disabled:hover {
+  border-color: var(--line-strong);
+  color: var(--ink-faint);
+}
+
 .cat-count {
   margin: 1.1rem 0 0.8rem;
   font-size: 0.85rem;

@@ -70,6 +70,8 @@
       });
     });
     ix.genera.forEach(function(g) {
+      var f = ix.families[g[2]];
+      var href = "catalog.html#" + (f ? "family=" + encodeURIComponent(f[0]) + "&" : "") + "genus=" + encodeURIComponent(g[0]);
       add({
         match: g[0],
         kind: 1,
@@ -79,7 +81,7 @@
         note: [[g[1] + " species"]],
         tag: "Genus",
         group: "taxon",
-        href: catalogSearch(g[0])
+        href
       });
     });
     ix.families.forEach(function(f) {
