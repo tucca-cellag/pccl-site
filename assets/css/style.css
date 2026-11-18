@@ -3306,6 +3306,39 @@ a.item-tag:hover {
   white-space: nowrap;
 }
 
+.dict {
+  margin: 0.9rem 0 2.4rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 0.93rem;
+}
+.dict > div {
+  display: grid;
+  grid-template-columns: 12rem 1fr;
+  gap: 0.25rem 1rem;
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.dict > div:last-child {
+  border-bottom: 0;
+}
+.dict dt,
+.dict dd {
+  margin: 0;
+}
+.dict code {
+  font-family: var(--mono);
+  font-size: 0.86rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .dict > div {
+    grid-template-columns: 1fr;
+    padding: 0.6rem 0.8rem;
+  }
+}
+
 
 .glance dl {
   display: grid;

@@ -18,6 +18,7 @@ A line's page is at https://pccl.tufts.edu/line/<Culture ID>, with any space in 
 
 - [Data download](https://pccl.tufts.edu/downloads/pccl-data.zip): one zip of the species, held lines and media recipes as CSV and JSON, with a README describing every column. Data date: 2026-11-12.
 - [Downloads](https://pccl.tufts.edu/downloads): what the download holds
+- [Data dictionary](https://pccl.tufts.edu/data-dictionary): what each column of the downloaded files holds
 - [Sitemap](https://pccl.tufts.edu/sitemap.xml): the address of every line, species and medium page
 
 ## Optional
