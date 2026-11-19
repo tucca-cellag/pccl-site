@@ -1,8 +1,8 @@
 (function() {
   "use strict";
   var DATA = window.PCCL_BIOACTIVITY;
-  var DETAIL = window.PCCL_DETAIL || {};
-  var FORMER = window.PCCL_FORMER || {};
+  var DETAIL = Object.assign(/* @__PURE__ */ Object.create(null), window.PCCL_DETAIL);
+  var FORMER = Object.assign(/* @__PURE__ */ Object.create(null), window.PCCL_FORMER);
   var panel = document.getElementById("mapdetail");
   var tip = document.getElementById("maptip");
   if (!DATA || !panel) return;
@@ -18,7 +18,7 @@
   var ACTS = Object.keys(tally).sort(function(a, b) {
     return tally[b] - tally[a] || (a < b ? -1 : 1);
   });
-  var CODES = {
+  var CODES = Object.assign(/* @__PURE__ */ Object.create(null), {
     Antiviral: "AV",
     Antibacterial: "AB",
     Antifungal: "AF",
@@ -26,7 +26,7 @@
     Anthelmintic: "AH",
     Insecticidal: "IC",
     Anticancer: "AC"
-  };
+  });
   var code = function(a) {
     return CODES[a] || a.slice(0, 2).toUpperCase();
   };
@@ -264,7 +264,7 @@
       var holds = function(text) {
         return text.toLowerCase().indexOf(q) >= 0;
       };
-      var byFormer = {};
+      var byFormer = /* @__PURE__ */ Object.create(null);
       var list = DATA.filter(function(d) {
         if (!q || holds(d.s)) return true;
         if (String((DETAIL[d.s] || {}).common || "").split(",").some(holds))

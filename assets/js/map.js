@@ -1,8 +1,8 @@
 (function() {
   var DATA = window.PCCL_TAXONOMY;
   if (!DATA) return;
-  var DETAIL = window.PCCL_DETAIL || {};
-  var FORMER = window.PCCL_FORMER || {};
+  var DETAIL = Object.assign(/* @__PURE__ */ Object.create(null), window.PCCL_DETAIL);
+  var FORMER = Object.assign(/* @__PURE__ */ Object.create(null), window.PCCL_FORMER);
   var svg = document.getElementById("mapsvg");
   var tip = document.getElementById("maptip");
   var crumb = document.getElementById("mapcrumb");
@@ -40,7 +40,7 @@
   var orders = root.children.map(function(o) {
     return o.name;
   });
-  var hueOf = {};
+  var hueOf = /* @__PURE__ */ Object.create(null);
   orders.forEach(function(o, i) {
     hueOf[o] = Math.round(i / orders.length * 360);
   });
@@ -773,7 +773,7 @@
       updateCrumb();
     }
   }
-  var byName = {};
+  var byName = /* @__PURE__ */ Object.create(null);
   (function idx(n) {
     var k = n.name.toLowerCase();
     (byName[k] = byName[k] || []).push(n);
@@ -808,7 +808,7 @@
     if (n.children) n.children.forEach(c);
   })(root);
   var VIA_RANK = { "": 0, common: 1, former: 2 };
-  var nowName = {};
+  var nowName = /* @__PURE__ */ Object.create(null);
   Object.keys(FORMER).forEach(function(name) {
     FORMER[name].forEach(function(f) {
       var k = f.toLowerCase();
