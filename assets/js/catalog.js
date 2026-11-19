@@ -118,9 +118,14 @@
     }
     return hayCache.get(d);
   }
+  function wfoDigits(q) {
+    var m = /^(?:wfo)?(\d{10})$/.exec(q.replace(/ /g, ""));
+    return m ? m[1] : null;
+  }
   function matches(d) {
     var q = fold(state.q);
-    if (q && hay(d).indexOf(q) === -1) return false;
+    var byWfo = d.wfo && wfoDigits(q) === d.wfo.slice("wfo-".length);
+    if (q && hay(d).indexOf(q) === -1 && !byWfo) return false;
     if (state.growth && !(d.maxGrowth >= 4)) return false;
     if (state.bio && !d.hasAct) return false;
     if (state.fam && d.family !== state.fam) return false;

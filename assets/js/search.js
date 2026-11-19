@@ -69,6 +69,23 @@
         href: s[1]
       });
     });
+    (ix.wfo || []).forEach(function(w) {
+      var id = /^wfo-(\d{10})$/i.exec(w[0]);
+      var s = ix.species[w[1]];
+      if (!id || !s) return;
+      add({
+        match: id[1],
+        wfo: true,
+        kind: 0,
+        target: "s" + w[1],
+        name: w[0],
+        style: "cid",
+        note: [[s[0], "binom"]],
+        tag: "WFO ID",
+        group: "sp",
+        href: s[1]
+      });
+    });
     ix.genera.forEach(function(g) {
       var f = ix.families[g[2]];
       var href = "catalog.html#" + (f ? "family=" + encodeURIComponent(f[0]) + "&" : "") + "genus=" + encodeURIComponent(g[0]);
@@ -159,10 +176,11 @@
     var q = fold(text);
     var qs = q.replace(/ /g, "");
     if (q.length < MIN) return [];
+    var typedWfo = /^(?:wfo)?(\d{10})$/.exec(qs);
     var hits = [];
     for (var i2 = 0; i2 < entries2.length; i2++) {
       var e = entries2[i2];
-      var r = rank(e.key, e.code ? qs : q);
+      var r = e.wfo ? typedWfo && e.key === typedWfo[1] ? 0 : -1 : rank(e.key, e.code ? qs : q);
       if (r >= 0) hits.push({ e, rank: r });
     }
     hits.sort(function(a, b) {
