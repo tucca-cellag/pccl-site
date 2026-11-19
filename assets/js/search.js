@@ -28,6 +28,24 @@
       e.key = e.code ? squash(e.match) : fold(e.match);
       if (e.key) out.push(e);
     }
+    var carriers = /* @__PURE__ */ Object.create(null);
+    ix.species.forEach(function(s, i2) {
+      s[2].forEach(function(c) {
+        var list = carriers[fold(c)] = carriers[fold(c)] || [];
+        if (list.indexOf(i2) < 0) list.push(i2);
+      });
+    });
+    function commonNote(c, i2) {
+      var note = [[cap(c)]];
+      var others = (carriers[fold(c)] || []).filter(function(j) {
+        return j !== i2;
+      });
+      others.forEach(function(j, n) {
+        note.push([n ? ", " : " \xB7 also "]);
+        note.push([ix.species[j][0], "binom"]);
+      });
+      return note;
+    }
     ix.species.forEach(function(s, i2) {
       var commons = s[2];
       add({
@@ -48,7 +66,7 @@
           target: "s" + i2,
           name: s[0],
           style: "binom",
-          note: [[cap(c)]],
+          note: commonNote(c, i2),
           tag: "Species",
           group: "sp",
           href: s[1]
