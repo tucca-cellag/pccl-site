@@ -2,6 +2,7 @@
   "use strict";
   var DATA = window.PCCL_BIOACTIVITY;
   var DETAIL = window.PCCL_DETAIL || {};
+  var FORMER = window.PCCL_FORMER || {};
   var panel = document.getElementById("mapdetail");
   var tip = document.getElementById("maptip");
   if (!DATA || !panel) return;
@@ -260,8 +261,17 @@
         );
       });
       var q = filter.trim().toLowerCase();
+      var holds = function(text) {
+        return text.toLowerCase().indexOf(q) >= 0;
+      };
+      var byFormer = {};
       var list = DATA.filter(function(d) {
-        return !q || d.s.toLowerCase().indexOf(q) >= 0;
+        if (!q || holds(d.s)) return true;
+        if (String((DETAIL[d.s] || {}).common || "").split(",").some(holds))
+          return true;
+        var former = (FORMER[d.s] || []).filter(holds)[0];
+        if (former) byFormer[d.s] = former;
+        return !!former;
       }).sort(function(a, b) {
         var va, vb;
         if (sort.by === "s") {
@@ -291,6 +301,15 @@
           bringPanel();
         });
         td.appendChild(b);
+        if (byFormer[d.s]) {
+          var was = document.createElement("span");
+          was.className = "muted";
+          was.appendChild(document.createTextNode(" formerly "));
+          var em = document.createElement("em");
+          em.textContent = byFormer[d.s];
+          was.appendChild(em);
+          td.appendChild(was);
+        }
         row.appendChild(td);
         ACTS.forEach(function(a) {
           var c = document.createElement("td");
@@ -422,8 +441,16 @@
     }
     raw = rawPart("species");
     if (raw !== null) {
+      var named = lowerDecoded(raw);
+      var nowOf = Object.keys(FORMER).filter(function(name) {
+        return FORMER[name].some(function(f) {
+          return f.toLowerCase() === named;
+        });
+      });
       var m = DATA.filter(function(d) {
-        return d.s.toLowerCase() === lowerDecoded(raw);
+        return d.s.toLowerCase() === named;
+      })[0] || nowOf.length === 1 && DATA.filter(function(d) {
+        return d.s === nowOf[0];
       })[0];
       return m ? function() {
         openSpecies(m, false);

@@ -2,6 +2,7 @@
   var DATA = window.PCCL_TAXONOMY;
   if (!DATA) return;
   var DETAIL = window.PCCL_DETAIL || {};
+  var FORMER = window.PCCL_FORMER || {};
   var svg = document.getElementById("mapsvg");
   var tip = document.getElementById("maptip");
   var crumb = document.getElementById("mapcrumb");
@@ -793,11 +794,27 @@
   function nodeOf(b) {
     return findNode(b.getAttribute("data-name"), Number(b.getAttribute("data-depth")));
   }
-  var allNodes = [];
+  var entries = [];
   (function c(n) {
-    if (n.depth > 0) allNodes.push(n);
+    if (n.depth > 0) entries.push({ node: n, text: n.name, via: "" });
+    if (n.depth === 4) {
+      String((DETAIL[n.name] || {}).common || "").split(",").forEach(function(name) {
+        if (name) entries.push({ node: n, text: name, via: "common" });
+      });
+      (FORMER[n.name] || []).forEach(function(name) {
+        entries.push({ node: n, text: name, via: "former" });
+      });
+    }
     if (n.children) n.children.forEach(c);
   })(root);
+  var VIA_RANK = { "": 0, common: 1, former: 2 };
+  var nowName = {};
+  Object.keys(FORMER).forEach(function(name) {
+    FORMER[name].forEach(function(f) {
+      var k = f.toLowerCase();
+      nowName[k] = k in nowName && nowName[k] !== name ? null : name;
+    });
+  });
   function runSearch(q) {
     if (!suggestEl) return;
     q = q.trim().toLowerCase();
@@ -806,11 +823,18 @@
       suggestEl.classList.remove("open");
       return;
     }
-    var hits = allNodes.filter(function(n) {
-      return n.name.toLowerCase().indexOf(q) >= 0;
+    var sorted = entries.filter(function(e) {
+      return e.text.toLowerCase().indexOf(q) >= 0;
     }).sort(function(a, b) {
-      return a.name.toLowerCase().indexOf(q) - b.name.toLowerCase().indexOf(q) || b.nspecies - a.nspecies;
-    }).slice(0, 8);
+      return a.text.toLowerCase().indexOf(q) - b.text.toLowerCase().indexOf(q) || VIA_RANK[a.via] - VIA_RANK[b.via] || b.node.nspecies - a.node.nspecies;
+    });
+    var hits = [];
+    for (var i = 0; i < sorted.length && hits.length < 8; i++) {
+      var taken = hits.some(function(h) {
+        return h.node === sorted[i].node;
+      });
+      if (!taken) hits.push(sorted[i]);
+    }
     if (!hits.length) {
       window.pcclHTML(suggestEl, '<div class="sg-empty">No match</div>');
       suggestEl.classList.add("open");
@@ -818,8 +842,11 @@
     }
     window.pcclHTML(
       suggestEl,
-      hits.map(function(n) {
-        return '<button class="sg" data-name="' + esc(n.name) + '" data-depth="' + n.depth + '"><span class="sg-r">' + RANKS[n.depth] + "</span> " + (n.depth === 4 ? "<em>" + esc(n.name) + "</em>" : esc(n.name)) + " <b>" + n.nspecies + "</b></button>";
+      hits.map(function(e) {
+        var n = e.node;
+        var name = n.depth === 4 ? "<em>" + esc(n.name) + "</em>" : esc(n.name);
+        var label2 = e.via === "common" ? name + ' <span class="muted">' + esc(e.text) + "</span>" : e.via === "former" ? "<em>" + esc(e.text) + '</em> <span class="muted">now ' + name + "</span>" : name;
+        return '<button class="sg" data-name="' + esc(n.name) + '" data-depth="' + n.depth + '"><span class="sg-r">' + RANKS[n.depth] + "</span> " + label2 + " <b>" + n.nspecies + "</b></button>";
       }).join("")
     );
     suggestEl.classList.add("open");
@@ -926,7 +953,10 @@
   function fromAddress() {
     var params = new URLSearchParams(location.hash.slice(1));
     var rank = params.get("rank");
-    return findNode(params.get("taxon"), rank ? RANKS.indexOf(rank) : void 0) || null;
+    var name = params.get("taxon");
+    var depth = rank ? RANKS.indexOf(rank) : void 0;
+    var now = depth === void 0 || depth === 4 ? nowName[(name || "").toLowerCase()] : null;
+    return findNode(name, depth) || (now ? findNode(now, 4) : null) || null;
   }
   function followAddress() {
     if (location.hash === drawnFor) return;
