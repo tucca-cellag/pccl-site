@@ -3519,6 +3519,27 @@ a.item-tag:hover {
   margin-top: 1rem;
 }
 
+.item-range {
+  max-width: 72ch;
+}
+.item-range-note {
+  margin: 0 0 0.4rem;
+}
+.item-range-continent {
+  font-weight: 600;
+}
+.item-range summary {
+  cursor: pointer;
+  color: var(--ink-soft);
+}
+.item-range details[open] summary {
+  margin-bottom: 0.4rem;
+}
+.item-range-credit {
+  margin: 0.5rem 0 0;
+  font-size: 0.85rem;
+}
+
 
 .changelog-section {
   display: grid;
