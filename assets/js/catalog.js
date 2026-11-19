@@ -30,7 +30,7 @@
     "--brown",
     "--yellow"
   ];
-  var famColorCache = {};
+  var famColorCache = /* @__PURE__ */ Object.create(null);
   function famColor(fam) {
     if (!fam) return "--ink-faint";
     if (!(fam in famColorCache)) {
@@ -337,7 +337,7 @@
   var generaOf = /* @__PURE__ */ Object.create(null);
   var familyOf = /* @__PURE__ */ Object.create(null);
   function populateFilters() {
-    var famCounts = {}, actCounts = {};
+    var famCounts = /* @__PURE__ */ Object.create(null), actCounts = /* @__PURE__ */ Object.create(null);
     DATA.forEach(function(d) {
       if (d.family) famCounts[d.family] = (famCounts[d.family] || 0) + 1;
       if (d.family && d.genus) {
