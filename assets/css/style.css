@@ -2522,6 +2522,19 @@ footer {
 .cat-chip[aria-pressed='true'] .cat-chip-n {
   color: inherit;
 }
+
+.cat-chip:disabled {
+  cursor: default;
+  color: var(--ink-faint);
+  background-color: transparent;
+}
+.cat-chip:disabled:hover {
+  border-color: var(--line-strong);
+  color: var(--ink-faint);
+}
+.cat-chip:disabled .dot {
+  opacity: 0.4;
+}
 .cat-select {
   font-size: 0.8rem;
   border: 1px solid var(--line-strong);
@@ -2556,6 +2569,18 @@ footer {
 }
 .cat-select:disabled:hover {
   border-color: var(--line-strong);
+  color: var(--ink-faint);
+}
+
+#catRegion {
+  min-width: 15rem;
+  max-width: 16rem;
+}
+
+.cat-source {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.8rem;
   color: var(--ink-faint);
 }
 

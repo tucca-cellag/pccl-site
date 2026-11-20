@@ -8,6 +8,7 @@
   var famSel = document.getElementById("catFamily");
   var genSel = document.getElementById("catGenus");
   var actSel = document.getElementById("catActivity");
+  var regSel = document.getElementById("catRegion");
   var sortSel = document.getElementById("catSort");
   var growthNote = document.getElementById("catGrowthNote");
   var clearBtn = document.getElementById("catClear");
@@ -49,6 +50,7 @@
     fam: "",
     genus: "",
     act: "",
+    region: "",
     sort: "common"
   };
   function esc(s) {
@@ -122,16 +124,93 @@
     var m = /^(?:wfo)?(\d{10})$/.exec(q.replace(/ /g, ""));
     return m ? m[1] : null;
   }
-  function matches(d) {
+  var CHIP = {
+    bio: function(d) {
+      return !!d.hasAct;
+    },
+    growth: function(d) {
+      return d.maxGrowth >= 4;
+    }
+  };
+  function passes(d, q, wfo) {
+    var byWfo = !!(wfo && d.wfo && wfo === d.wfo.slice("wfo-".length));
+    return {
+      q: !q || hay(d).indexOf(q) !== -1 || byWfo,
+      bio: !state.bio || CHIP.bio(d),
+      growth: !state.growth || CHIP.growth(d),
+      fam: !state.fam || d.family === state.fam,
+      genus: !state.genus || d.genus === state.genus,
+      act: !state.act || !!(d.acts && d.acts.indexOf(state.act) !== -1),
+      // A card's `regions` are the TDWG codes of the continents and regions it is native to, as
+      // numbers; a species with no range, or named only to genus, has none, so no region keeps it.
+      region: !state.region || !!(d.regions && d.regions.indexOf(Number(state.region)) !== -1)
+    };
+  }
+  function narrow() {
     var q = fold(state.q);
-    var byWfo = d.wfo && wfoDigits(q) === d.wfo.slice("wfo-".length);
-    if (q && hay(d).indexOf(q) === -1 && !byWfo) return false;
-    if (state.growth && !(d.maxGrowth >= 4)) return false;
-    if (state.bio && !d.hasAct) return false;
-    if (state.fam && d.family !== state.fam) return false;
-    if (state.genus && d.genus !== state.genus) return false;
-    if (state.act && !(d.acts && d.acts.indexOf(state.act) !== -1)) return false;
-    return true;
+    var wfo = wfoDigits(q);
+    var kept = [];
+    var counts = {
+      fam: /* @__PURE__ */ Object.create(null),
+      genus: /* @__PURE__ */ Object.create(null),
+      act: /* @__PURE__ */ Object.create(null),
+      region: /* @__PURE__ */ Object.create(null)
+    };
+    var chipCounts = { bio: 0, growth: 0 };
+    function add(tally, key) {
+      tally[key] = (tally[key] || 0) + 1;
+    }
+    DATA.forEach(function(d) {
+      var p = passes(d, q, wfo);
+      if (!p.q) return;
+      if (p.fam && p.genus && p.act && p.region) {
+        if (p.growth && CHIP.bio(d)) chipCounts.bio++;
+        if (p.bio && CHIP.growth(d)) chipCounts.growth++;
+      }
+      if (!(p.bio && p.growth)) return;
+      if (p.act && p.region) {
+        if (d.family) add(counts.fam, d.family);
+        if (p.fam && d.genus) add(counts.genus, d.genus);
+      }
+      if (!(p.fam && p.genus)) return;
+      if (p.region)
+        (d.acts || []).forEach(function(a) {
+          add(counts.act, a);
+        });
+      if (p.act)
+        (d.regions || []).forEach(function(code) {
+          add(counts.region, String(code));
+        });
+      if (p.act && p.region) kept.push(d);
+    });
+    relabel(famSel, counts.fam);
+    relabel(genSel, counts.genus);
+    relabel(actSel, counts.act);
+    relabel(regSel, counts.region);
+    relabelChips(chipCounts);
+    return kept;
+  }
+  function relabelChips(counts) {
+    var chips2 = document.querySelectorAll(".cat-chip");
+    for (var i = 0; i < chips2.length; i++) {
+      var f = chips2[i].getAttribute("data-filter");
+      var count = counts[f] || 0;
+      var span = chips2[i].querySelector("[data-chip-count]");
+      if (span) span.textContent = fmt(count);
+      chips2[i].disabled = count === 0 && !state[f];
+    }
+  }
+  function relabel(sel, counts) {
+    if (!sel) return;
+    for (var i = 0; i < sel.options.length; i++) {
+      var o = sel.options[i];
+      var name = o.getAttribute("data-name");
+      if (name === null) continue;
+      var count = counts[o.value] || 0;
+      var label = name + " (" + fmt(count) + ")";
+      if (o.textContent !== label) o.textContent = label;
+      o.disabled = count === 0 && o.value !== sel.value;
+    }
   }
   var pager = window.PcclPager(48);
   var moreBtn = document.getElementById("catMore");
@@ -146,7 +225,7 @@
   }
   function render(step) {
     pager.reset();
-    current = sortList(DATA.filter(matches));
+    current = sortList(narrow());
     var visible = pager.page(current);
     window.pcclHTML(
       grid,
@@ -182,6 +261,8 @@
     setGenus(genus);
     state.act = setMenu(actSel, params.get("act") || "");
     if (actSel) actSel.classList.toggle("on", !!state.act);
+    state.region = setMenu(regSel, params.get("region") || "");
+    if (regSel) regSel.classList.toggle("on", !!state.region);
     state.bio = params.get("bio") === "1";
     state.growth = params.get("growth") === "4-5";
     state.sort = setMenu(sortSel, params.get("sort") || "common") || "common";
@@ -194,6 +275,7 @@
     if (state.fam) parts.push("family=" + encodeURIComponent(state.fam));
     if (state.genus) parts.push("genus=" + encodeURIComponent(state.genus));
     if (state.act) parts.push("act=" + encodeURIComponent(state.act));
+    if (state.region) parts.push("region=" + encodeURIComponent(state.region));
     if (state.bio) parts.push("bio=1");
     if (state.growth) parts.push("growth=4-5");
     if (state.sort === "scientific") parts.push("sort=scientific");
@@ -281,18 +363,19 @@
   }
   if (dlBtn) dlBtn.addEventListener("click", downloadResults);
   function filtered() {
-    return !!(state.q.trim() || state.growth || state.bio || state.fam || state.genus || state.act);
+    return !!(state.q.trim() || state.growth || state.bio || state.fam || state.genus || state.act || state.region);
   }
   function clearFilters() {
     state.q = "";
     if (qEl) qEl.value = "";
     state.growth = state.bio = false;
-    state.act = "";
+    state.act = state.region = "";
     setFamily("");
-    if (actSel) {
-      actSel.value = "";
-      actSel.classList.remove("on");
-    }
+    [actSel, regSel].forEach(function(sel) {
+      if (!sel) return;
+      sel.value = "";
+      sel.classList.remove("on");
+    });
     syncChips();
     render(true);
     if (qEl) qEl.focus();
@@ -305,21 +388,15 @@
       chips2[i].setAttribute("aria-pressed", state[f] ? "true" : "false");
     }
   }
-  function fillChips() {
-    var kept = { bio: 0, growth: 0 };
+  function fillGrowthNote() {
     var lines = 0;
     var rated = 0;
     DATA.forEach(function(d) {
-      if (d.hasAct) kept.bio++;
-      if (d.maxGrowth >= 4) kept.growth++;
       d.lines.forEach(function(l) {
         lines++;
         if (l.growth) rated++;
       });
     });
-    var spans = document.querySelectorAll("[data-chip-count]");
-    for (var i = 0; i < spans.length; i++)
-      spans[i].textContent = fmt(kept[spans[i].getAttribute("data-chip-count")]);
     if (growthNote)
       growthNote.textContent = "Growth, 1 slow to 5 fast, is rated for " + fmt(rated) + " of " + fmt(lines) + " held lines.";
   }
@@ -330,7 +407,8 @@
     }).forEach(function(k) {
       var o = document.createElement("option");
       o.value = k;
-      o.textContent = k + " (" + counts[k] + ")";
+      o.setAttribute("data-name", k);
+      o.textContent = k + " (" + fmt(counts[k]) + ")";
       el.appendChild(o);
     });
   }
@@ -408,8 +486,14 @@
       this.classList.toggle("on", !!this.value);
       render(true);
     });
+  if (regSel)
+    regSel.addEventListener("change", function() {
+      state.region = this.value;
+      this.classList.toggle("on", !!this.value);
+      render(true);
+    });
   populateFilters();
-  fillChips();
+  fillGrowthNote();
   if (readAddress()) {
     render();
     document.querySelector(".cat-filters").scrollIntoView({ block: "start" });
