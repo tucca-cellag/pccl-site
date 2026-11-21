@@ -80,7 +80,7 @@
   function tipHTML(d) {
     var rank = RANKS[d.depth] || "taxon";
     var v = d.value, u = unit();
-    var nm = d.depth === 4 ? "<em>" + esc(d.name) + "</em>" : esc(d.name);
+    var nm = d.depth === 4 ? spName(d.name) : esc(d.name);
     return '<div class="t-r">' + rank + '</div><div class="t-name">' + nm + '</div><div class="t-n">' + v + " " + u + "</div>";
   }
   function statusChip(s) {
@@ -216,6 +216,8 @@
     });
     label2.textContent = focus.depth === 0 ? "PCCL" : focus.name;
     label2.style.pointerEvents = "none";
+    var perPx = SIZE / (svg.getBoundingClientRect().width || SIZE);
+    label2.style.fontSize = Math.max(20, 13 * perPx) + "px";
     svg.appendChild(label2);
   }
   function updateCrumb() {
@@ -574,6 +576,7 @@
     showTip(html, e.clientX - rc.left, e.clientY - rc.top);
   }
   var ZOOM_HINT = '<div class="t-hint">click to zoom in</div>';
+  var LABEL_PX = 13;
   function drawBubbles() {
     while (svg.firstChild) svg.removeChild(svg.firstChild);
     var t = packTree(), s = (SIZE / 2 - 4) / t.r, dk = isDark(), zo = null;
@@ -646,7 +649,7 @@
             c.addEventListener("mousemove", function(e) {
               e.stopPropagation();
               tipAt(
-                '<div class="t-r">species</div><div class="t-name"><em>' + esc(dot.sp.name) + '</em></div><div class="t-n">' + esc(f.node.name) + " \xB7 " + esc(o.node.name) + "</div>",
+                '<div class="t-r">species</div><div class="t-name">' + spName(dot.sp.name) + '</div><div class="t-n">' + esc(f.node.name) + " \xB7 " + esc(o.node.name) + "</div>",
                 e
               );
             });
@@ -677,13 +680,13 @@
           g.addEventListener("mouseleave", hideTip);
         }
         og.appendChild(g);
-        var fsize = 11 * k;
+        var fsize = LABEL_PX * k;
         if (open) named.push({ x: fx, y: fy, r: fr, text: f.node.name });
         else if (!zo && textFits(f.node.name, fsize, 1.9 * fr))
           labels.push(label(fx, fy, f.node.name, fsize));
       });
       svg.appendChild(og);
-      var osize = 10.5 * k, oname = o.node.name.toUpperCase();
+      var osize = LABEL_PX * k, oname = o.node.name;
       if (!dim && textFits(oname, osize, 1.7 * orr))
         labels.push(label(ox, oy - orr + osize * 1.1, oname, osize));
     });
@@ -693,7 +696,7 @@
     if (named.length)
       placeNames(
         named,
-        11 * k,
+        LABEL_PX * k,
         box,
         labels.map(function(l) {
           var b = l.getBBox();
@@ -714,6 +717,9 @@
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
     });
   }
+  function spName(name) {
+    return "<em>" + window.pcclNameHTML(name) + "</em>";
+  }
   function lineSlug(cid) {
     return String(cid == null ? "" : cid).trim().replace(/\s+/g, "-");
   }
@@ -722,7 +728,7 @@
     var html = "";
     if (!node.children) {
       var d = DETAIL[node.name] || {};
-      html += '<p class="d-rank">Species</p><h2 class="d-name sp">' + (d.id ? '<a href="species/' + esc(d.id) + '.html">' + esc(node.name) + "</a>" : esc(node.name)) + "</h2>";
+      html += '<p class="d-rank">Species</p><h2 class="d-name sp">' + (d.id ? '<a href="species/' + esc(d.id) + '.html">' + window.pcclNameHTML(node.name) + "</a>" : window.pcclNameHTML(node.name)) + "</h2>";
       if (d.common) html += '<p class="d-common">' + esc(d.common.split(",").join(", ")) + "</p>";
       var genus = d.genus || node.name.split(" ")[0];
       var parts = [d.order, d.family, genus].filter(Boolean);
@@ -750,7 +756,7 @@
       });
       html += '<p class="d-sub">' + (node.depth >= 3 ? "Species" : RANKS[node.depth + 1] + "s") + '</p><div class="d-chips">';
       html += kids.map(function(c) {
-        return '<button class="d-chip" data-name="' + esc(c.name) + '" data-depth="' + c.depth + '">' + (c.children ? "" : "<em>") + esc(c.name) + (c.children ? "" : "</em>") + " <b>" + c.nspecies + "</b></button>";
+        return '<button class="d-chip" data-name="' + esc(c.name) + '" data-depth="' + c.depth + '">' + (c.children ? esc(c.name) : spName(c.name)) + " <b>" + c.nspecies + "</b></button>";
       }).join("") + "</div>";
     }
     window.pcclHTML(detailEl, html);
@@ -844,8 +850,8 @@
       suggestEl,
       hits.map(function(e) {
         var n = e.node;
-        var name = n.depth === 4 ? "<em>" + esc(n.name) + "</em>" : esc(n.name);
-        var label2 = e.via === "common" ? name + ' <span class="muted">' + esc(e.text) + "</span>" : e.via === "former" ? "<em>" + esc(e.text) + '</em> <span class="muted">now ' + name + "</span>" : name;
+        var name = n.depth === 4 ? spName(n.name) : esc(n.name);
+        var label2 = e.via === "common" ? name + ' <span class="muted">' + esc(e.text) + "</span>" : e.via === "former" ? spName(e.text) + ' <span class="muted">now ' + name + "</span>" : name;
         return '<button class="sg" data-name="' + esc(n.name) + '" data-depth="' + n.depth + '"><span class="sg-r">' + RANKS[n.depth] + "</span> " + label2 + " <b>" + n.nspecies + "</b></button>";
       }).join("")
     );

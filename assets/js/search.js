@@ -247,8 +247,8 @@
     function go(href) {
       window.location.assign(root + href);
     }
-    function say(text, visible) {
-      msg.textContent = text;
+    function say(text2, visible) {
+      msg.textContent = text2;
       msg.classList.toggle("is-shown", !!visible);
     }
     function setActive(i2) {
@@ -280,6 +280,10 @@
       span.textContent = ", ";
       return span;
     }
+    function text(el, value, style) {
+      if (style === "binom" && window.pcclNameInto) window.pcclNameInto(el, value);
+      else el.textContent = value;
+    }
     function option(e, i2) {
       var li = document.createElement("li");
       li.id = input.id + "-opt-" + i2;
@@ -289,7 +293,7 @@
       li.setAttribute("data-i", String(i2));
       var name = document.createElement("span");
       name.className = "site-search-name" + (e.style ? " " + e.style : "");
-      name.textContent = e.name;
+      text(name, e.name, e.style);
       li.appendChild(name);
       if (e.note.length) {
         li.appendChild(pause());
@@ -299,7 +303,7 @@
           if (part[1]) {
             var span = document.createElement("span");
             span.className = part[1];
-            span.textContent = part[0];
+            text(span, part[0], part[1]);
             note.appendChild(span);
           } else {
             note.appendChild(document.createTextNode(part[0]));
@@ -385,8 +389,8 @@
         go(shown[active].href);
         return;
       }
-      var text = input.value.trim();
-      if (text) go(catalogSearch(text));
+      var text2 = input.value.trim();
+      if (text2) go(catalogSearch(text2));
       else input.focus();
     });
     boxes.push({ input, update, close });

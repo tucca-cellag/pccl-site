@@ -17,33 +17,23 @@
   function fmt(x) {
     return x.toLocaleString("en-US");
   }
-  var STATUS = {
-    lc: { cls: "lc", label: "Live & Cryo" },
-    lo: { cls: "lo", label: "Live only" },
-    co: { cls: "co", label: "Cryopreserved" }
-  };
-  var ACCENTS = [
-    "--green",
-    "--teal",
-    "--orange",
-    "--purple",
-    "--red",
-    "--blue",
-    "--brown",
-    "--yellow"
-  ];
-  var famColorCache = /* @__PURE__ */ Object.create(null);
-  function famColor(fam) {
-    if (!fam) return "--ink-faint";
-    if (!(fam in famColorCache)) {
-      var h = 0;
-      for (var i = 0; i < fam.length; i++) h = h * 31 + fam.charCodeAt(i) >>> 0;
-      famColorCache[fam] = ACCENTS[h % ACCENTS.length];
-    }
-    return famColorCache[fam];
+  var dlBtn = document.getElementById("catDownload");
+  var STATUS_WORDS = new Map(
+    Object.entries(dlBtn ? JSON.parse(dlBtn.getAttribute("data-status")) : {})
+  );
+  function statusWords(code) {
+    return STATUS_WORDS.get(code) || "Not recorded";
   }
-  var LEAF = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21c0-6 0-9 0-13"/><path d="M12 12C8 12 5 9 5 5c4 0 7 3 7 7Z"/><path d="M12 9c3-1 6-4 6-7-3 0-6 3-6 7Z"/></svg>';
-  var CHEV = '<svg class="cat-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+  var ONE_STATUS = (function() {
+    var seen = null;
+    return DATA.every(function(d) {
+      return d.lines.every(function(l) {
+        var s = l.status || "";
+        if (seen === null) seen = s;
+        return s === seen;
+      });
+    });
+  })();
   var state = {
     q: "",
     growth: false,
@@ -66,29 +56,28 @@
   function lineSlug(cid) {
     return String(cid == null ? "" : cid).trim().replace(/\s+/g, "-");
   }
-  function cardHTML(d, idx) {
-    var fam = famColor(d.family);
-    var title = d.common ? '<span class="common">' + esc(cap(d.common)) + "</span>" : '<span class="common sp">' + esc(d.sp) + "</span>";
-    var showBinom = d.common && d.common.toLowerCase() !== d.sp.toLowerCase();
-    var path = [d.order, d.family, d.genus].filter(Boolean).join(" \u203A ") || "Taxonomy pending";
-    var st = d.status && STATUS[d.status];
-    var statusBadge = st ? '<span class="cat-status ' + st.cls + '">' + st.label + "</span>" : "";
-    var growthBadge = d.maxGrowth ? '<span class="cat-growth">growth <span class="g">' + d.maxGrowth + "</span>/5</span>" : "";
-    var acts = d.acts && d.acts.length ? '<div class="cat-actrow">' + d.acts.map(function(a) {
-      return '<span class="cat-act">' + esc(a) + "</span>";
-    }).join("") + "</div>" : "";
-    var n = d.lines.length;
-    var open = !!openSet[d.sp];
-    return '<article class="cat-card' + (open ? " open" : "") + '" data-i="' + idx + '" style="--fam:var(' + fam + ')"><button class="cat-head" type="button" aria-expanded="' + open + '" aria-controls="catlines-' + idx + '"><span class="cat-thumb">' + LEAF + '</span><span class="cat-title">' + title + (showBinom ? '<span class="binom">' + esc(d.sp) + "</span>" : "") + '<span class="path">' + esc(path) + '</span></span><span class="cat-badges">' + statusBadge + growthBadge + '<span class="cat-nlines">' + n + " line" + (n > 1 ? "s" : "") + "</span></span>" + CHEV + "</button>" + acts + '<div class="cat-expand" id="catlines-' + idx + '">' + (open ? linesHTML(d) : "") + "</div></article>";
+  function none(words) {
+    return '<span class="cat-none" aria-hidden="true">\u2013</span><span class="visually-hidden">' + words + "</span>";
   }
-  function linesHTML(d) {
-    return '<div class="cat-lines"><div class="lh">Cell lines \xB7 Culture ID / status / media / growth</div>' + d.lines.map(function(l) {
-      var ls = l.status && STATUS[l.status];
-      var lstat = ls ? '<span class="cat-status lstat ' + ls.cls + '">' + ls.label + "</span>" : "";
-      var media = l.media ? '<span class="lmeta">' + esc(l.media) + "</span>" : "";
-      var g = l.growth ? '<span class="lmeta">growth ' + l.growth + "/5</span>" : "";
-      return '<div class="cat-line"><a class="cid" href="line/' + esc(lineSlug(l.cid)) + '.html">' + esc(l.cid) + "</a>" + lstat + media + g + '<a class="req" href="order.html">Request \u2192</a></div>';
-    }).join("") + (d.id ? '<div class="cat-line"><a class="req" href="species/' + esc(d.id) + '.html">Species page \u2192</a></div>' : "") + "</div>";
+  function nameHTML(d) {
+    var sci = window.pcclNameHTML(d.sp);
+    var inner = d.common && d.common.toLowerCase() !== d.sp.toLowerCase() ? '<span class="cat-common">' + esc(cap(d.common)) + '</span><i class="cat-sci">' + sci + "</i>" : d.common ? '<span class="cat-common">' + esc(cap(d.common)) + "</span>" : '<i class="cat-sci cat-alone">' + sci + "</i>";
+    return d.id ? '<a class="cat-name" href="species/' + esc(d.id) + '.html">' + inner + "</a>" : '<span class="cat-name">' + inner + "</span>";
+  }
+  function rowHTML(d) {
+    var cids = d.lines.map(function(l) {
+      return '<a class="cid" href="line/' + esc(lineSlug(l.cid)) + '.html">' + esc(l.cid) + "</a>";
+    }).join("");
+    var statuses = ONE_STATUS ? "" : '<td class="cat-status">' + d.lines.map(function(l) {
+      return "<span>" + esc(statusWords(l.status)) + "</span>";
+    }).join("") + "</td>";
+    var acts = (d.acts || []).map(function(a, i) {
+      return i === 0 ? cap(a) : a.toLowerCase();
+    }).join(", ");
+    return '<tr><td class="cat-namecell">' + nameHTML(d) + '</td><td class="cat-family">' + (d.family ? esc(d.family) : none("Family not recorded")) + '</td><td class="cat-cids">' + cids + "</td>" + statuses + '<td class="cat-acts">' + esc(acts) + '</td><td class="cat-growth">' + (d.maxGrowth ? esc(d.maxGrowth) + " of 5" : none("Not rated")) + "</td></tr>";
+  }
+  function tableHTML(rows) {
+    return '<table class="cat-table"><caption class="visually-hidden">Species in the catalog, one row each</caption><thead><tr><th scope="col">Name</th><th scope="col">Family</th><th scope="col">Held lines</th>' + (ONE_STATUS ? "" : '<th scope="col">Status</th>') + '<th scope="col">Reported bioactivity</th><th scope="col" class="cat-growth">Growth</th></tr></thead><tbody>' + rows + "</tbody></table>";
   }
   function nameKey(name) {
     return name.replace(/×\s*/g, "").trim();
@@ -143,10 +132,10 @@
       fam: !state.fam || d.family === state.fam,
       genus: !state.genus || d.genus === state.genus,
       act: !state.act || !!(d.acts && d.acts.indexOf(state.act) !== -1),
-      // A card's `regions` are the TDWG codes of the continents and regions it is native to, as
-      // numbers; a species with no range, or named only to genus, has none, so no region keeps it.
+      // A species record's `regions` are the TDWG codes of the continents and regions it is native
+      // to, as numbers; a species with no range, or named only to genus, has none, so no region keeps it.
       region: !state.region || !!(d.regions && d.regions.indexOf(Number(state.region)) !== -1),
-      // A card's `grin` holds the keys of the GRIN options its species matches; a species GRIN has
+      // A species record's `grin` holds the keys of the GRIN options it matches; a species GRIN has
       // no record of has none, so no option keeps it.
       grin: !state.grin || !!(d.grin && d.grin.indexOf(state.grin) !== -1)
     };
@@ -226,13 +215,10 @@
   var pager = window.PcclPager(48);
   var moreBtn = document.getElementById("catMore");
   var current = [];
-  var openSet = /* @__PURE__ */ Object.create(null);
   var drawnFor = null;
   var searching = false;
-  function cardsHTML(list, from) {
-    return list.map(function(d, k) {
-      return cardHTML(d, from + k);
-    }).join("");
+  function rowsHTML(list) {
+    return list.map(rowHTML).join("");
   }
   function render(step) {
     pager.reset();
@@ -240,7 +226,7 @@
     var visible = pager.page(current);
     window.pcclHTML(
       grid,
-      visible.length ? cardsHTML(visible, 0) : '<div class="cat-empty">No species match. <button type="button" class="btn btn-ghost" data-clear>Show all species</button></div>'
+      visible.length ? tableHTML(rowsHTML(visible)) : '<div class="cat-empty">No species match. <button type="button" class="btn btn-ghost" data-clear>Show all species</button></div>'
     );
     countEl.textContent = fmt(current.length);
     if (growthNote) growthNote.hidden = !state.growth;
@@ -303,30 +289,16 @@
     var before = pager.page(current).length;
     pager.more();
     var tpl = document.createElement("template");
-    window.pcclHTML(tpl, cardsHTML(pager.page(current).slice(before), before));
-    var firstHead = tpl.content.querySelector(".cat-head");
-    grid.appendChild(tpl.content);
+    window.pcclHTML(tpl, rowsHTML(pager.page(current).slice(before)));
+    var firstLink = tpl.content.querySelector("a");
+    grid.querySelector("tbody").appendChild(tpl.content);
     window.PcclPager.syncMore(moreBtn, pager, current);
-    if (firstHead) firstHead.focus();
+    if (firstLink) firstLink.focus();
   }
   grid.addEventListener("click", function(e) {
-    if (e.target.closest("[data-clear]")) {
-      clearFilters();
-      return;
-    }
-    var head = e.target.closest(".cat-head");
-    if (!head) return;
-    var card = head.closest(".cat-card");
-    var d = current[Number(card.getAttribute("data-i"))];
-    var open = card.classList.toggle("open");
-    head.setAttribute("aria-expanded", open ? "true" : "false");
-    if (open) openSet[d.sp] = true;
-    else delete openSet[d.sp];
-    var expand = card.querySelector(".cat-expand");
-    if (open && !expand.firstChild) window.pcclHTML(expand, linesHTML(d));
+    if (e.target.closest("[data-clear]")) clearFilters();
   });
   if (moreBtn) moreBtn.addEventListener("click", showMore);
-  var dlBtn = document.getElementById("catDownload");
   var DL_HEADER = [
     "culture_id",
     "species",
@@ -342,7 +314,6 @@
     "species_activities"
   ];
   function downloadResults() {
-    var words = JSON.parse(dlBtn.getAttribute("data-status"));
     var rows = [];
     current.forEach(function(d) {
       var common = d.allCommon ? d.allCommon.split(",").join("; ") : "";
@@ -355,7 +326,7 @@
           d.genus,
           d.family,
           d.order,
-          words[l.status] || "Not recorded",
+          statusWords(l.status),
           l.media || "",
           l.growth,
           !!l.avail,

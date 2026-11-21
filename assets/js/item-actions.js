@@ -29,6 +29,26 @@
       failed();
     }
   }
+  function markWideTables() {
+    var wraps = document.querySelectorAll(".table-wrap");
+    for (var i = 0; i < wraps.length; i++) {
+      var wrap = wraps[i];
+      var next = wrap.nextElementSibling;
+      var hint = next && next.classList.contains("table-hint") ? next : null;
+      var wide = wrap.scrollWidth > wrap.clientWidth + 1;
+      if (wide && !hint) {
+        hint = document.createElement("p");
+        hint.className = "table-hint";
+        hint.textContent = "The table is wider than the screen: scroll it sideways for every column.";
+        wrap.parentNode.insertBefore(hint, wrap.nextSibling);
+      } else if (!wide && hint) {
+        hint.remove();
+      }
+    }
+  }
+  markWideTables();
+  window.addEventListener("resize", markWideTables);
+  if (document.fonts) document.fonts.ready.then(markWideTables);
   document.addEventListener("click", function(e) {
     var button = e.target.closest("[data-print], [data-copy-link], [data-copy]");
     if (!button) return;

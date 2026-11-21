@@ -62,7 +62,7 @@
   }
   function showSpecies(m) {
     var d = DETAIL[m.s];
-    var html = '<p class="d-rank">Species</p><h3 class="d-name sp">' + (d && d.id ? '<a href="species/' + esc(d.id) + '.html">' + esc(m.s) + "</a>" : esc(m.s)) + "</h3>";
+    var html = '<p class="d-rank">Species</p><h3 class="d-name sp">' + (d && d.id ? '<a href="species/' + esc(d.id) + '.html">' + window.pcclNameHTML(m.s) + "</a>" : window.pcclNameHTML(m.s)) + "</h3>";
     if (d && d.common)
       html += '<p class="d-common">' + esc(d.common.split(",").join(", ")) + "</p>";
     if (d) {
@@ -88,8 +88,8 @@
     });
     window.pcclHTML(
       panel,
-      '<p class="d-rank">' + esc(rank) + '</p><h3 class="d-name">' + esc(title) + '</h3><p class="d-sub">' + plural(members.length, "species", "species") + '</p><div class="d-chips">' + sorted.map(function(m) {
-        return '<button type="button" class="d-chip" data-sp="' + esc(m.s) + '"><em>' + esc(m.s) + "</em> <b>" + m.n + "</b></button>";
+      '<p class="d-rank">' + esc(rank) + '</p><h3 class="d-name d-name-plain">' + esc(title) + '</h3><p class="d-sub">' + plural(members.length, "species", "species") + '</p><div class="d-chips">' + sorted.map(function(m) {
+        return '<button type="button" class="d-chip" data-sp="' + esc(m.s) + '"><em>' + window.pcclNameHTML(m.s) + "</em> <b>" + m.n + "</b></button>";
       }).join("") + "</div>"
     );
     panel.classList.add("open");
@@ -295,7 +295,7 @@
         var b = document.createElement("button");
         b.type = "button";
         b.className = "sp";
-        b.textContent = d.s;
+        window.pcclNameInto(b, d.s);
         b.addEventListener("click", function() {
           openSpecies(d, true);
           bringPanel();
@@ -306,7 +306,7 @@
           was.className = "muted";
           was.appendChild(document.createTextNode(" formerly "));
           var em = document.createElement("em");
-          em.textContent = byFormer[d.s];
+          window.pcclNameInto(em, byFormer[d.s]);
           was.appendChild(em);
           td.appendChild(was);
         }
