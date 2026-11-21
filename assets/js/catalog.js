@@ -9,6 +9,7 @@
   var genSel = document.getElementById("catGenus");
   var actSel = document.getElementById("catActivity");
   var regSel = document.getElementById("catRegion");
+  var grinSel = document.getElementById("catGrin");
   var sortSel = document.getElementById("catSort");
   var growthNote = document.getElementById("catGrowthNote");
   var clearBtn = document.getElementById("catClear");
@@ -51,6 +52,7 @@
     genus: "",
     act: "",
     region: "",
+    grin: "",
     sort: "common"
   };
   function esc(s) {
@@ -143,7 +145,10 @@
       act: !state.act || !!(d.acts && d.acts.indexOf(state.act) !== -1),
       // A card's `regions` are the TDWG codes of the continents and regions it is native to, as
       // numbers; a species with no range, or named only to genus, has none, so no region keeps it.
-      region: !state.region || !!(d.regions && d.regions.indexOf(Number(state.region)) !== -1)
+      region: !state.region || !!(d.regions && d.regions.indexOf(Number(state.region)) !== -1),
+      // A card's `grin` holds the keys of the GRIN options its species matches; a species GRIN has
+      // no record of has none, so no option keeps it.
+      grin: !state.grin || !!(d.grin && d.grin.indexOf(state.grin) !== -1)
     };
   }
   function narrow() {
@@ -154,7 +159,8 @@
       fam: /* @__PURE__ */ Object.create(null),
       genus: /* @__PURE__ */ Object.create(null),
       act: /* @__PURE__ */ Object.create(null),
-      region: /* @__PURE__ */ Object.create(null)
+      region: /* @__PURE__ */ Object.create(null),
+      grin: /* @__PURE__ */ Object.create(null)
     };
     var chipCounts = { bio: 0, growth: 0 };
     function add(tally, key) {
@@ -163,30 +169,35 @@
     DATA.forEach(function(d) {
       var p = passes(d, q, wfo);
       if (!p.q) return;
-      if (p.fam && p.genus && p.act && p.region) {
+      if (p.fam && p.genus && p.act && p.region && p.grin) {
         if (p.growth && CHIP.bio(d)) chipCounts.bio++;
         if (p.bio && CHIP.growth(d)) chipCounts.growth++;
       }
       if (!(p.bio && p.growth)) return;
-      if (p.act && p.region) {
+      if (p.act && p.region && p.grin) {
         if (d.family) add(counts.fam, d.family);
         if (p.fam && d.genus) add(counts.genus, d.genus);
       }
       if (!(p.fam && p.genus)) return;
-      if (p.region)
+      if (p.region && p.grin)
         (d.acts || []).forEach(function(a) {
           add(counts.act, a);
         });
-      if (p.act)
+      if (p.act && p.grin)
         (d.regions || []).forEach(function(code) {
           add(counts.region, String(code));
         });
-      if (p.act && p.region) kept.push(d);
+      if (p.act && p.region)
+        (d.grin || []).forEach(function(key) {
+          add(counts.grin, key);
+        });
+      if (p.act && p.region && p.grin) kept.push(d);
     });
     relabel(famSel, counts.fam);
     relabel(genSel, counts.genus);
     relabel(actSel, counts.act);
     relabel(regSel, counts.region);
+    relabel(grinSel, counts.grin);
     relabelChips(chipCounts);
     return kept;
   }
@@ -263,6 +274,8 @@
     if (actSel) actSel.classList.toggle("on", !!state.act);
     state.region = setMenu(regSel, params.get("region") || "");
     if (regSel) regSel.classList.toggle("on", !!state.region);
+    state.grin = setMenu(grinSel, params.get("grin") || "");
+    if (grinSel) grinSel.classList.toggle("on", !!state.grin);
     state.bio = params.get("bio") === "1";
     state.growth = params.get("growth") === "4-5";
     state.sort = setMenu(sortSel, params.get("sort") || "common") || "common";
@@ -276,6 +289,7 @@
     if (state.genus) parts.push("genus=" + encodeURIComponent(state.genus));
     if (state.act) parts.push("act=" + encodeURIComponent(state.act));
     if (state.region) parts.push("region=" + encodeURIComponent(state.region));
+    if (state.grin) parts.push("grin=" + encodeURIComponent(state.grin));
     if (state.bio) parts.push("bio=1");
     if (state.growth) parts.push("growth=4-5");
     if (state.sort === "scientific") parts.push("sort=scientific");
@@ -363,15 +377,15 @@
   }
   if (dlBtn) dlBtn.addEventListener("click", downloadResults);
   function filtered() {
-    return !!(state.q.trim() || state.growth || state.bio || state.fam || state.genus || state.act || state.region);
+    return !!(state.q.trim() || state.growth || state.bio || state.fam || state.genus || state.act || state.region || state.grin);
   }
   function clearFilters() {
     state.q = "";
     if (qEl) qEl.value = "";
     state.growth = state.bio = false;
-    state.act = state.region = "";
+    state.act = state.region = state.grin = "";
     setFamily("");
-    [actSel, regSel].forEach(function(sel) {
+    [actSel, regSel, grinSel].forEach(function(sel) {
       if (!sel) return;
       sel.value = "";
       sel.classList.remove("on");
@@ -489,6 +503,12 @@
   if (regSel)
     regSel.addEventListener("change", function() {
       state.region = this.value;
+      this.classList.toggle("on", !!this.value);
+      render(true);
+    });
+  if (grinSel)
+    grinSel.addEventListener("change", function() {
+      state.grin = this.value;
       this.classList.toggle("on", !!this.value);
       render(true);
     });

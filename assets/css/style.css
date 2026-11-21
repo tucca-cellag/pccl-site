@@ -2577,6 +2577,20 @@ footer {
   max-width: 16rem;
 }
 
+.cat-fgroup-fit {
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+.cat-fgroup-fit .cat-flabel {
+  flex: none;
+}
+#catGrin {
+  flex: 0 1 21rem;
+  min-width: 0;
+  max-width: none;
+  text-overflow: ellipsis;
+}
+
 .cat-source {
   flex-basis: 100%;
   margin: 0;
