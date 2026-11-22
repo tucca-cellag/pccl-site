@@ -104,6 +104,7 @@
         fold(
           [d.sp, d.allCommon, d.family, d.genus].concat(
             d.otherNames || [],
+            d.grinCommon || [],
             FORMER[d.sp] || [],
             d.lines.map(function(l) {
               return l.cid;

@@ -33,26 +33,43 @@
       e.key = e.code ? squash(e.match) : fold(e.match);
       if (e.key) out.push(e);
     }
-    var carriers = /* @__PURE__ */ Object.create(null);
+    var commonCarriers = /* @__PURE__ */ Object.create(null);
+    function carry(name, i2) {
+      var list = commonCarriers[fold(name)] = commonCarriers[fold(name)] || [];
+      if (list.indexOf(i2) < 0) list.push(i2);
+    }
     ix.species.forEach(function(s, i2) {
       s[2].forEach(function(c) {
-        var list = carriers[fold(c)] = carriers[fold(c)] || [];
-        if (list.indexOf(i2) < 0) list.push(i2);
+        carry(c, i2);
       });
     });
-    function commonNote(c, i2) {
-      var note = [[cap(c)]];
-      var others = (carriers[fold(c)] || []).filter(function(j) {
-        return j !== i2;
+    (ix.grinCommon || []).forEach(function(g) {
+      if (ix.species[g[1]]) carry(g[0], g[1]);
+    });
+    var grinLabels = Array.isArray(ix.grinLabels) ? ix.grinLabels : [];
+    function labelled(name, labels) {
+      var list = (Array.isArray(labels) ? labels : []).map(function(k) {
+        return typeof k === "number" ? grinLabels[k] : void 0;
+      }).filter(function(l) {
+        return typeof l === "string" && l !== "";
       });
-      others.forEach(function(j, n) {
+      return cap(name) + (list.length ? " (" + list.join(", ") + ")" : "");
+    }
+    function alsoNote(note, list, i2) {
+      list.filter(function(j) {
+        return j !== i2;
+      }).forEach(function(j, n) {
         note.push([n ? ", " : " \xB7 also "]);
         note.push([ix.species[j][0], "binom"]);
       });
       return note;
     }
+    function commonNote(c, i2, labels) {
+      return alsoNote([[labelled(c, labels)]], commonCarriers[fold(c)] || [], i2);
+    }
     ix.species.forEach(function(s, i2) {
       var commons = s[2];
+      var labels = Array.isArray(s[3]) ? s[3] : [];
       add({
         match: s[0],
         kind: 0,
@@ -64,14 +81,14 @@
         group: "sp",
         href: s[1]
       });
-      commons.forEach(function(c) {
+      commons.forEach(function(c, k) {
         add({
           match: c,
           kind: 0,
           target: "s" + i2,
           name: s[0],
           style: "binom",
-          note: commonNote(c, i2),
+          note: commonNote(c, i2, labels[k]),
           tag: "Species",
           group: "sp",
           href: s[1]
@@ -105,6 +122,22 @@
         style: "binom",
         note: [["listed as "], [s[0], "binom"]],
         tag,
+        group: "sp",
+        href: s[1]
+      });
+    });
+    (ix.grinCommon || []).forEach(function(g) {
+      var s = ix.species[g[1]];
+      if (!s) return;
+      add({
+        match: g[0],
+        other: 1,
+        kind: 0,
+        target: "s" + g[1],
+        name: s[0],
+        style: "binom",
+        note: commonNote(g[0], g[1], g[2]),
+        tag: "GRIN's common name",
         group: "sp",
         href: s[1]
       });

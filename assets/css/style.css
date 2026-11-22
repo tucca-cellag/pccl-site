@@ -3248,20 +3248,24 @@ a.item-tag:hover {
   margin-top: 1rem;
 }
 
-.item-range {
+.item-range,
+.item-common {
   max-width: 72ch;
 }
 .item-range-note {
   margin: 0 0 0.4rem;
 }
-.item-range-continent {
+.item-range-continent,
+.item-common-label {
   font-weight: 600;
 }
-.item-range summary {
+.item-range summary,
+.item-common summary {
   cursor: pointer;
   color: var(--ink-soft);
 }
-.item-range details[open] summary {
+.item-range details[open] summary,
+.item-common details[open] summary {
   margin-bottom: 0.4rem;
 }
 .item-range-credit {
