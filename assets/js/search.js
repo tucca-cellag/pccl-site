@@ -46,10 +46,10 @@
     (ix.grinCommon || []).forEach(function(g) {
       if (ix.species[g[1]]) carry(g[0], g[1]);
     });
-    var grinLabels = Array.isArray(ix.grinLabels) ? ix.grinLabels : [];
+    var languages = Array.isArray(ix.languages) ? ix.languages : [];
     function labelled(name, labels) {
       var list = (Array.isArray(labels) ? labels : []).map(function(k) {
-        return typeof k === "number" ? grinLabels[k] : void 0;
+        return typeof k === "number" ? languages[k] : void 0;
       }).filter(function(l) {
         return typeof l === "string" && l !== "";
       });
