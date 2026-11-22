@@ -22,6 +22,11 @@
   function catalogSearch(text) {
     return "catalog.html#q=" + encodeURIComponent(text);
   }
+  var WHOSE = Object.assign(/* @__PURE__ */ Object.create(null), {
+    1: "WCVP's name",
+    2: "GRIN's name",
+    3: "WCVP's and GRIN's name"
+  });
   function prepare(ix) {
     var out = [];
     function add(e) {
@@ -83,6 +88,23 @@
         style: "binom",
         note: [["now "], [s[0], "binom"]],
         tag: "Former name",
+        group: "sp",
+        href: s[1]
+      });
+    });
+    (ix.otherNames || []).forEach(function(o) {
+      var s = ix.species[o[1]];
+      var tag = WHOSE[o[2]];
+      if (!s || !tag) return;
+      add({
+        match: o[0],
+        other: 1,
+        kind: 0,
+        target: "s" + o[1],
+        name: o[0],
+        style: "binom",
+        note: [["listed as "], [s[0], "binom"]],
+        tag,
         group: "sp",
         href: s[1]
       });
@@ -202,7 +224,7 @@
       if (r >= 0) hits.push({ e, rank: r });
     }
     hits.sort(function(a, b) {
-      return a.rank - b.rank || a.e.kind - b.e.kind || a.e.key.length - b.e.key.length || (a.e.key < b.e.key ? -1 : a.e.key > b.e.key ? 1 : 0);
+      return a.rank - b.rank || a.e.kind - b.e.kind || (a.e.other ? 1 : 0) - (b.e.other ? 1 : 0) || a.e.key.length - b.e.key.length || (a.e.key < b.e.key ? -1 : a.e.key > b.e.key ? 1 : 0);
     });
     var seen = {};
     var out = [];

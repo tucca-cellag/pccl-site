@@ -1,6 +1,7 @@
 (function() {
   "use strict";
   var DATA = window.PCCL_CATALOG || [];
+  var FORMER = Object.assign(/* @__PURE__ */ Object.create(null), window.PCCL_FORMER);
   var grid = document.getElementById("catGrid");
   if (!grid || !DATA.length) return;
   var countEl = document.getElementById("catCount");
@@ -102,6 +103,8 @@
         d,
         fold(
           [d.sp, d.allCommon, d.family, d.genus].concat(
+            d.otherNames || [],
+            FORMER[d.sp] || [],
             d.lines.map(function(l) {
               return l.cid;
             })

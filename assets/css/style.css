@@ -763,6 +763,17 @@ nav.links a.active {
   }
 }
 
+@media (max-width: 30rem) {
+  .site-search-opt {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'name' 'note' 'tag';
+  }
+  .site-search-tag {
+    justify-self: start;
+    margin-top: 0.2rem;
+  }
+}
+
 
 
 .btn {
