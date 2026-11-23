@@ -48,6 +48,22 @@
   font-display: swap;
   src: url('../fonts/figtree-700.woff2') format('woff2');
 }
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/jetbrains-mono-400.woff2') format('woff2');
+  unicode-range: U+0020-007E;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../fonts/jetbrains-mono-600.woff2') format('woff2');
+  unicode-range: U+0020-007E;
+}
 
 
 
@@ -108,7 +124,7 @@
   --sans:
     'proxima-nova', 'Figtree', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial,
     sans-serif;
-  --mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace; 
+  --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace; 
 
   --maxw: 1140px;
   --pad: clamp(1.15rem, 4vw, 2.5rem);
@@ -2668,6 +2684,13 @@ a.cat-name:hover .cat-alone {
   font-size: 0.48em;
   color: var(--ink-soft);
 }
+
+.record-name.record-cid {
+  font-family: var(--mono);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  overflow-wrap: anywhere;
+}
 .record-lede {
   margin: 0.8rem 0 1.6rem;
 }
@@ -2707,6 +2730,15 @@ a.cat-name:hover .cat-alone {
 }
 .fact-names {
   max-width: 72ch;
+}
+
+.record-facts .authorship {
+  color: var(--ink-soft);
+}
+
+.record-growth {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 .record-code {
   font-family: var(--mono);
@@ -2763,10 +2795,6 @@ a.cat-name:hover .cat-alone {
 .record-table .cid {
   font-size: 0.875rem;
   white-space: nowrap;
-}
-.record-table .record-growth {
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
 }
 .record-table .record-request-cell {
   padding-right: 0;
@@ -2828,6 +2856,11 @@ a.cat-name:hover .cat-alone {
   line-height: 1.4;
   color: var(--ink-soft);
 }
+
+.lineage-pending {
+  font-size: 0.9375rem;
+  color: var(--ink-soft);
+}
 .record-ids {
   font-size: 0.9375rem;
 }
@@ -2836,6 +2869,10 @@ a.cat-name:hover .cat-alone {
 }
 .record-foray {
   margin-top: 3rem;
+}
+
+.record-foray > * + * {
+  margin-top: 1.1rem;
 }
 @media (max-width: 900px) {
   .record-grid {
@@ -2916,18 +2953,9 @@ a.cat-name:hover .cat-alone {
   margin: 0;
   color: var(--ink);
 }
-.item-title {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 0.5rem 0.8rem;
-}
 .item-sub {
   color: var(--ink-soft);
   margin: 0.35rem 0 0;
-}
-.item-tags.item-head-tags {
-  margin-top: 0.7rem;
 }
 .item-actions {
   display: flex;
@@ -2950,21 +2978,6 @@ a.cat-name:hover .cat-alone {
 .item-btn:hover {
   border-color: var(--link-hover);
   color: var(--link-hover);
-}
-.item-btn.primary {
-  background: var(--btn);
-  border-color: var(--btn);
-  color: var(--on-btn);
-}
-.item-btn.primary:hover {
-  background: var(--btn-hover);
-  border-color: var(--btn-hover);
-  color: var(--on-btn);
-}
-.item-btn.small {
-  font-size: 0.8125rem;
-  padding: 0.25rem 0.6rem;
-  border-radius: 3px;
 }
 
 
@@ -3227,15 +3240,6 @@ p.item-muted {
   border: 1px solid var(--line);
   text-decoration: none;
 }
-a.item-tag {
-  color: var(--link);
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.18em;
-}
-a.item-tag:hover {
-  color: var(--link-hover);
-}
 
 
 .growth-dots .dots {
@@ -3460,21 +3464,6 @@ a.item-tag:hover {
 }
 
 
-.item-facts {
-  display: grid;
-  grid-template-columns: 11rem minmax(0, 1fr);
-  gap: 0.75rem 1.2rem;
-  margin: 0;
-}
-.item-facts dt {
-  font-size: 0.85rem;
-  color: var(--ink-faint);
-  padding-top: 0.1rem;
-}
-.item-facts dd {
-  margin: 0;
-  color: var(--ink);
-}
 .item-plain-list {
   list-style: none;
   margin: 0;
@@ -3482,20 +3471,6 @@ a.item-tag:hover {
 }
 .item-plain-list li + li {
   margin-top: 0.2rem;
-}
-
-.item-facts dd.item-tags {
-  align-items: flex-start;
-}
-
-.line-stocks li {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem;
-}
-.item-facts + .item-note {
-  margin-top: 1rem;
 }
 
 .item-grin {
@@ -3638,13 +3613,6 @@ a.item-tag:hover {
   }
   .glance dl > div:last-child:nth-child(odd) {
     grid-column: 1 / -1;
-  }
-  .item-facts {
-    grid-template-columns: 1fr;
-    gap: 0.2rem;
-  }
-  .item-facts dd {
-    margin-bottom: 0.6rem;
   }
 }
 @media (max-width: 560px) {
